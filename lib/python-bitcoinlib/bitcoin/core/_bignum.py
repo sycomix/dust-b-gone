@@ -21,9 +21,7 @@ import struct
 # generic big endian MPI format
 
 def bn_bytes(v, have_ext=False):
-    ext = 0
-    if have_ext:
-        ext = 1
+    ext = 1 if have_ext else 0
     return ((v.bit_length() + 7) // 8) + ext
 
 def bn2bin(v):
@@ -41,10 +39,7 @@ def bin2bn(s):
     return l
 
 def bn2mpi(v):
-    have_ext = False
-    if v.bit_length() > 0:
-        have_ext = (v.bit_length() & 0x07) == 0
-
+    have_ext = (v.bit_length() & 0x07) == 0 if v.bit_length() > 0 else False
     neg = False
     if v < 0:
         neg = True
@@ -82,15 +77,12 @@ def mpi2bn(s):
 
     v = bin2bn(v_str)
 
-    if neg:
-        return -v
-    return v
+    return -v if neg else v
 
 # bitcoin-specific little endian format, with implicit size
 def mpi2vch(s):
     r = s[4:]           # strip size
-    r = r[::-1]         # reverse string, converting BE->LE
-    return r
+    return r[::-1]
 
 def bn2vch(v):
     return bytes(mpi2vch(bn2mpi(v)))

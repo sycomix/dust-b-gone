@@ -160,9 +160,9 @@ class CPubKey(bytes):
         # Always have represent as b'<secret>' so test cases don't have to
         # change for py2/3
         if sys.version > '3':
-            return '%s(%s)' % (self.__class__.__name__, super(CPubKey, self).__repr__())
+            return f'{self.__class__.__name__}({super(CPubKey, self).__repr__()})'
         else:
-            return '%s(b%s)' % (self.__class__.__name__, super(CPubKey, self).__repr__())
+            return f'{self.__class__.__name__}(b{super(CPubKey, self).__repr__()})'
 
 __all__ = (
         'CECKey',

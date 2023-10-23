@@ -13,6 +13,7 @@
 
 """Serialize some bitcoin datastructures and show them in serialized and repr form."""
 
+
 import sys
 if sys.version_info.major < 3:
     sys.stderr.write('Sorry, Python 3.x required by this example.\n')
@@ -28,7 +29,7 @@ for c in [msg_version, msg_tx, msg_block]:
     # Instanciate the message with some default values
     msg = c()
     name = c.__name__
-    print(name + " repr:")
+    print(f"{name} repr:")
     print(msg)
-    print(name + " serialized:")
+    print(f"{name} serialized:")
     print(msg.to_bytes())

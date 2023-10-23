@@ -57,10 +57,7 @@ def MurmurHash3(nHashSeed, vDataToHash):
     k1 = 0
     j = (len(vDataToHash) // 4) * 4
     import sys
-    bord = ord
-    if sys.version > '3':
-        # In Py3 indexing bytes returns numbers, not characters
-        bord = lambda x: x
+    bord = (lambda x: x) if sys.version > '3' else ord
     if len(vDataToHash) & 3 >= 3:
         k1 ^= bord(vDataToHash[j+2]) << 16
     if len(vDataToHash) & 3 >= 2:
@@ -159,7 +156,7 @@ class CBloomFilter(bitcoin.core.serialize.Serializable):
     def IsWithinSizeConstraints(self):
         return len(self.vData) <= self.MAX_BLOOM_FILTER_SIZE and self.nHashFuncs <= self.MAX_HASH_FUNCS
 
-    def IsRelevantAndUpdate(tx, tx_hash):
+    def IsRelevantAndUpdate(self, tx_hash):
         # Not useful for a client, so not implemented yet.
         raise NotImplementedError
 

@@ -242,10 +242,7 @@ class VectorSerializer(Serializer):
     @classmethod
     def stream_deserialize(cls, inner_cls, f):
         n = VarIntSerializer.stream_deserialize(f)
-        r = []
-        for i in range(n):
-            r.append(inner_cls.stream_deserialize(f))
-        return r
+        return [inner_cls.stream_deserialize(f) for _ in range(n)]
 
 
 class uint256VectorSerializer(Serializer):
@@ -260,10 +257,7 @@ class uint256VectorSerializer(Serializer):
     @classmethod
     def stream_deserialize(cls, f):
         n = VarIntSerializer.stream_deserialize(f)
-        r = []
-        for i in range(n):
-            r.append(ser_read(f, 32))
-        return r
+        return [ser_read(f, 32) for _ in range(n)]
 
 
 class intVectorSerialzer(Serializer):
@@ -277,9 +271,7 @@ class intVectorSerialzer(Serializer):
     @classmethod
     def stream_deserialize(cls, f):
         l = VarIntSerializer.stream_deserialize(f)
-        ints = []
-        for i in range(l):
-            ints.append(struct.unpack(b"<i", ser_read(f, 4)))
+        ints = [struct.unpack(b"<i", ser_read(f, 4)) for _ in range(l)]
 
 
 class VarStringSerializer(Serializer):
@@ -298,11 +290,8 @@ class VarStringSerializer(Serializer):
 
 def uint256_from_str(s):
     """Convert bytes to uint256"""
-    r = 0
     t = struct.unpack(b"<IIIIIIII", s[:32])
-    for i in range(8):
-        r += t[i] << (i * 32)
-    return r
+    return sum(t[i] << (i * 32) for i in range(8))
 
 
 def uint256_from_compact(c):
@@ -311,8 +300,7 @@ def uint256_from_compact(c):
     Used for the nBits compact encoding of the target in the block header.
     """
     nbytes = (c >> 24) & 0xFF
-    v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
-    return v
+    return (c & 0xFFFFFF) << (8 * (nbytes - 3))
 
 
 def uint256_to_shortstr(u):

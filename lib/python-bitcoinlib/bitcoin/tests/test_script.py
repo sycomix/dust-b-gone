@@ -219,7 +219,7 @@ class Test_CScript(unittest.TestCase):
         self.assertEqual(script, b'\x09\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
         with self.assertRaises(TypeError):
-            script = script + None
+            script += None
         self.assertEqual(script, b'\x09\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
     def test_repr(self):

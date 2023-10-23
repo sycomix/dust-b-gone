@@ -21,9 +21,8 @@ from bitcoin.base58 import *
 
 
 def load_test_vectors(name):
-    with open(os.path.dirname(__file__) + '/data/' + name, 'r') as fd:
-        for testcase in json.load(fd):
-            yield testcase
+    with open(f'{os.path.dirname(__file__)}/data/{name}', 'r') as fd:
+        yield from json.load(fd)
 
 class Test_base58(unittest.TestCase):
     def test_encode_decode(self):

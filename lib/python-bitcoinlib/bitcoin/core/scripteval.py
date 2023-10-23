@@ -55,7 +55,7 @@ class EvalScriptError(bitcoin.core.ValidationError):
                  sop=None, sop_data=None, sop_pc=None,
                  stack=None, scriptIn=None, txTo=None, inIdx=None, flags=None,
                  altstack=None, vfExec=None, pbegincodehash=None, nOpCount=None):
-        super(EvalScriptError, self).__init__('EvalScript: %s' % msg)
+        super(EvalScriptError, self).__init__(f'EvalScript: {msg}')
 
         sop = sop
         sop_data = sop_data
@@ -86,15 +86,16 @@ class ArgumentsInvalidError(EvalScriptError):
     """Arguments are invalid"""
     def __init__(self, opcode, msg, **kwargs):
         super(ArgumentsInvalidError, self).__init__(
-                '%s args invalid: %s' % (OPCODE_NAMES[opcode], msg),
-                **kwargs)
+            f'{OPCODE_NAMES[opcode]} args invalid: {msg}', **kwargs
+        )
 
 
 class VerifyOpFailedError(EvalScriptError):
     """A VERIFY opcode failed"""
     def __init__(self, opcode, **kwargs):
-        super(VerifyOpFailedError, self).__init__('%s failed' % OPCODE_NAMES[opcode],
-                                                  **kwargs)
+        super(VerifyOpFailedError, self).__init__(
+            f'{OPCODE_NAMES[opcode]} failed', **kwargs
+        )
 
 def _CastToBigNum(s, err_raiser):
     v = bitcoin.core._bignum.vch2bn(s)
@@ -106,10 +107,7 @@ def _CastToBool(s):
     for i in range(len(s)):
         sv = _bord(s[i])
         if sv != 0:
-            if (i == (len(s) - 1)) and (sv == 0x80):
-                return False
-            return True
-
+            return i != len(s) - 1 or sv != 0x80
     return False
 
 
@@ -311,17 +309,9 @@ def _BinOp(opcode, stack, err_raiser):
         bn = long(bn1 >= bn2)
 
     elif opcode == OP_MIN:
-        if bn1 < bn2:
-            bn = bn1
-        else:
-            bn = bn2
-
+        bn = min(bn1, bn2)
     elif opcode == OP_MAX:
-        if bn1 > bn2:
-            bn = bn1
-        else:
-            bn = bn2
-
+        bn = max(bn1, bn2)
     else:
         raise AssertionError("Unknown binop opcode encountered; this should not happen")
 
@@ -331,10 +321,7 @@ def _BinOp(opcode, stack, err_raiser):
 
 
 def _CheckExec(vfExec):
-    for b in vfExec:
-        if not b:
-            return False
-    return True
+    return all(vfExec)
 
 
 def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
@@ -374,7 +361,7 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
 
 
         if sop in DISABLED_OPCODES:
-            err_raiser(EvalScriptError, 'opcode %s is disabled' % OPCODE_NAMES[sop])
+            err_raiser(EvalScriptError, f'opcode {OPCODE_NAMES[sop]} is disabled')
 
         if sop > OP_16:
             nOpCount[0] += 1
@@ -455,11 +442,11 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
                 stack.append(v2)
                 stack.append(v3)
 
-            elif sop == OP_CHECKMULTISIG or sop == OP_CHECKMULTISIGVERIFY:
+            elif sop in [OP_CHECKMULTISIG, OP_CHECKMULTISIGVERIFY]:
                 tmpScript = CScript(scriptIn[pbegincodehash:])
                 _CheckMultiSig(sop, tmpScript, stack, txTo, inIdx, err_raiser, nOpCount)
 
-            elif sop == OP_CHECKSIG or sop == OP_CHECKSIGVERIFY:
+            elif sop in [OP_CHECKSIG, OP_CHECKSIGVERIFY]:
                 check_args(2)
                 vchPubKey = stack[-1]
                 vchSig = stack[-2]
@@ -503,12 +490,12 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
                 stack.append(v)
 
             elif sop == OP_ELSE:
-                if len(vfExec) == 0:
+                if not vfExec:
                     err_raiser(EvalScriptError, 'ELSE found without prior IF')
                 vfExec[-1] = not vfExec[-1]
 
             elif sop == OP_ENDIF:
-                if len(vfExec) == 0:
+                if not vfExec:
                     err_raiser(EvalScriptError, 'ENDIF found without prior IF')
                 vfExec.pop()
 
@@ -534,7 +521,7 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
                     err_raiser(VerifyOpFailedError, sop)
 
             elif sop == OP_FROMALTSTACK:
-                if len(altstack) < 1:
+                if not altstack:
                     err_raiser(MissingOpArgumentsError, sop, altstack, 1)
                 v = altstack.pop()
                 stack.append(v)
@@ -547,7 +534,7 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
                 check_args(1)
                 stack.append(bitcoin.core.serialize.Hash(stack.pop()))
 
-            elif sop == OP_IF or sop == OP_NOTIF:
+            elif sop in [OP_IF, OP_NOTIF]:
                 val = False
 
                 if fExec:
@@ -578,11 +565,11 @@ def _EvalScript(stack, scriptIn, txTo, inIdx, flags=()):
                 vch = stack[-2]
                 stack.append(vch)
 
-            elif sop == OP_PICK or sop == OP_ROLL:
+            elif sop in [OP_PICK, OP_ROLL]:
                 check_args(2)
                 n = _CastToBigNum(stack.pop(), err_raiser)
                 if n < 0 or n >= len(stack):
-                    err_raiser(EvalScriptError, "Argument for %s out of bounds" % OPCODE_NAMES[sop])
+                    err_raiser(EvalScriptError, f"Argument for {OPCODE_NAMES[sop]} out of bounds")
                 vch = stack[-n-1]
                 if sop == OP_ROLL:
                     del stack[-n-1]
@@ -714,7 +701,7 @@ def VerifyScript(scriptSig, scriptPubKey, txTo, inIdx, flags=()):
     if SCRIPT_VERIFY_P2SH in flags:
         stackCopy = list(stack)
     EvalScript(stack, scriptPubKey, txTo, inIdx, flags=flags)
-    if len(stack) == 0:
+    if not stack:
         raise VerifyScriptError("scriptPubKey left an empty stack")
     if not _CastToBool(stack[-1]):
         raise VerifyScriptError("scriptPubKey returned false")

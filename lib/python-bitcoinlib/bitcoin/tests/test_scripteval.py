@@ -55,7 +55,7 @@ def parse_script(s):
 
 
 def load_test_vectors(name):
-    with open(os.path.dirname(__file__) + '/data/' + name, 'r') as fd:
+    with open(f'{os.path.dirname(__file__)}/data/{name}', 'r') as fd:
         for test_case in json.load(fd):
             if len(test_case) < 3:
                 test_case.append('')

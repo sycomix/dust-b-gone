@@ -80,7 +80,7 @@ class RawProxy(object):
             # Extract contents of bitcoin.conf to build service_url
             with open(btc_conf_file, 'r') as fd:
                 conf = {}
-                for line in fd.readlines():
+                for line in fd:
                     if '#' in line:
                         line = line[:line.index('#')]
                     if '=' not in line:
@@ -107,12 +107,9 @@ class RawProxy(object):
 
         self.__service_url = service_url
         self.__url = urlparse.urlparse(service_url)
-        if self.__url.port is None:
-            port = 80
-        else:
-            port = self.__url.port
+        port = 80 if self.__url.port is None else self.__url.port
         self.__id_count = 0
-        authpair = "%s:%s" % (self.__url.username, self.__url.password)
+        authpair = f"{self.__url.username}:{self.__url.password}"
         authpair = authpair.encode('utf8')
         self.__auth_header = b"Basic " + base64.b64encode(authpair)
 
@@ -288,10 +285,9 @@ class Proxy(RawProxy):
         if verbose:
             return self._call('getrawmempool', verbose)
 
-        else:
-            r = self._call('getrawmempool')
-            r = [lx(txid) for txid in r]
-            return r
+        r = self._call('getrawmempool')
+        r = [lx(txid) for txid in r]
+        return r
 
     def getrawtransaction(self, txid, verbose=False):
         """Return transaction with hash txid
@@ -455,8 +451,7 @@ class Proxy(RawProxy):
         return r
 
     def _addnode(self, node, arg):
-        r = self._call('addnode', node, arg)
-        return r
+        return self._call('addnode', node, arg)
 
     def addnode(self, node):
         return self._addnode(node, 'add')

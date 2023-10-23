@@ -18,7 +18,7 @@ import os
 from bitcoin.core import *
 
 def load_test_vectors(name):
-    with open(os.path.dirname(__file__) + '/data/' + name, 'r') as fd:
+    with open(f'{os.path.dirname(__file__)}/data/{name}', 'r') as fd:
         for test_case in json.load(fd):
             # Comments designated by single length strings
             if len(test_case) == 1:
@@ -57,4 +57,4 @@ class Test_CheckBlock(unittest.TestCase):
             except ValidationError as err:
                 continue
 
-            self.fail('Invalid block "%s" passed checks' % comment)
+            self.fail(f'Invalid block "{comment}" passed checks')

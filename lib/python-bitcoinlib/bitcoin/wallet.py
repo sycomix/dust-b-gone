@@ -15,13 +15,11 @@ Includes things like representing addresses and converting them to/from
 scriptPubKeys; currently there is no actual wallet support implemented.
 """
 
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import sys
-_bord = ord
-if sys.version > '3':
-    _bord = lambda x: x
-
+_bord = (lambda x: x) if sys.version > '3' else ord
 import bitcoin
 import bitcoin.base58
 import bitcoin.core
@@ -239,9 +237,9 @@ class CBitcoinSecret(bitcoin.base58.CBase58Data, CKey):
     def __init__(self, s):
         if self.nVersion != bitcoin.params.BASE58_PREFIXES['SECRET_KEY']:
             raise CBitcoinSecretError('Not a base58-encoded secret key: got nVersion=%d; expected nVersion=%d' % \
-                                      (self.nVersion, bitcoin.params.BASE58_PREFIXES['SECRET_KEY']))
+                                          (self.nVersion, bitcoin.params.BASE58_PREFIXES['SECRET_KEY']))
 
-        CKey.__init__(self, self[0:32], len(self) > 32 and _bord(self[32]) == 1)
+        CKey.__init__(self, self[:32], len(self) > 32 and _bord(self[32]) == 1)
 
 
 __all__ = (

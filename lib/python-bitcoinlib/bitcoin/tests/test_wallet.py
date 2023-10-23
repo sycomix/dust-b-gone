@@ -221,4 +221,4 @@ class Test_CBitcoinSecret(unittest.TestCase):
         # FIXME: need better tests than this
         self.assertTrue(key.pub.verify(hash, sig))
         self.assertFalse(key.pub.verify(b'\xFF'*32, sig))
-        self.assertFalse(key.pub.verify(hash, sig[0:-1] + b'\x00'))
+        self.assertFalse(key.pub.verify(hash, sig[:-1] + b'\x00'))

@@ -79,8 +79,9 @@ class MsgSerializable(Serializable):
 
         # check magic
         if recvbuf[:4] != params.MESSAGE_START:
-            raise ValueError("Invalid message start '%s', expected '%s'" %
-                             (b2x(recvbuf[:4]), b2x(params.MESSAGE_START)))
+            raise ValueError(
+                f"Invalid message start '{b2x(recvbuf[:4])}', expected '{b2x(params.MESSAGE_START)}'"
+            )
 
         # remaining header fields: command, msg length, checksum
         command = recvbuf[4:4+12].split(b"\x00", 1)[0]
@@ -94,15 +95,13 @@ class MsgSerializable(Serializable):
         th = hashlib.sha256(msg).digest()
         h = hashlib.sha256(th).digest()
         if checksum != h[:4]:
-            raise ValueError("got bad checksum %s" % repr(recvbuf))
-            recvbuf = recvbuf[4+12+4+4+msglen:]
-
+            raise ValueError(f"got bad checksum {repr(recvbuf)}")
         if command in messagemap:
             cls = messagemap[command]
             #        print("Going to deserialize '%s'" % msg)
             return cls.msg_deser(_BytesIO(msg))
         else:
-            print("Command '%s' not in messagemap" % str(command, 'ascii'))
+            print(f"Command '{str(command, 'ascii')}' not in messagemap")
             return None
 
     def stream_serialize(self, f):
@@ -197,7 +196,7 @@ class msg_addr(MsgSerializable):
         VectorSerializer.stream_serialize(CAddress, self.addrs, f)
 
     def __repr__(self):
-        return "msg_addr(addrs=%s)" % (repr(self.addrs))
+        return f"msg_addr(addrs={repr(self.addrs)})"
 
 
 class msg_alert(MsgSerializable):
@@ -217,7 +216,7 @@ class msg_alert(MsgSerializable):
         self.alert.stream_serialize(f)
 
     def __repr__(self):
-        return "msg_alert(alert=%s)" % (repr(self.alert), )
+        return f"msg_alert(alert={repr(self.alert)})"
 
 
 class msg_inv(MsgSerializable):
@@ -237,7 +236,7 @@ class msg_inv(MsgSerializable):
         VectorSerializer.stream_serialize(CInv, self.inv, f)
 
     def __repr__(self):
-        return "msg_inv(inv=%s)" % (repr(self.inv))
+        return f"msg_inv(inv={repr(self.inv)})"
 
 
 class msg_getdata(MsgSerializable):
@@ -257,7 +256,7 @@ class msg_getdata(MsgSerializable):
         VectorSerializer.stream_serialize(CInv, self.inv, f)
 
     def __repr__(self):
-        return "msg_getdata(inv=%s)" % (repr(self.inv))
+        return f"msg_getdata(inv={repr(self.inv)})"
 
 
 class msg_getblocks(MsgSerializable):
@@ -280,7 +279,7 @@ class msg_getblocks(MsgSerializable):
         f.write(self.hashstop)
 
     def __repr__(self):
-        return "msg_getblocks(locator=%s hashstop=%s)" % (repr(self.locator), b2x(self.hashstop))
+        return f"msg_getblocks(locator={repr(self.locator)} hashstop={b2x(self.hashstop)})"
 
 
 class msg_getheaders(MsgSerializable):
@@ -303,7 +302,7 @@ class msg_getheaders(MsgSerializable):
         f.write(self.hashstop)
 
     def __repr__(self):
-        return "msg_getheaders(locator=%s hashstop=%s)" % (repr(self.locator), b2x(self.hashstop))
+        return f"msg_getheaders(locator={repr(self.locator)} hashstop={b2x(self.hashstop)})"
 
 
 class msg_headers(MsgSerializable):
@@ -323,7 +322,7 @@ class msg_headers(MsgSerializable):
         VectorSerializer.stream_serialize(CBlock, self.headers, f)
 
     def __repr__(self):
-        return "msg_headers(headers=%s)" % (repr(self.headers))
+        return f"msg_headers(headers={repr(self.headers)})"
 
 
 class msg_tx(MsgSerializable):
@@ -343,7 +342,7 @@ class msg_tx(MsgSerializable):
         self.tx.stream_serialize(f)
 
     def __repr__(self):
-        return "msg_tx(tx=%s)" % (repr(self.tx))
+        return f"msg_tx(tx={repr(self.tx)})"
 
 
 class msg_block(MsgSerializable):
@@ -363,7 +362,7 @@ class msg_block(MsgSerializable):
         self.block.stream_serialize(f)
 
     def __repr__(self):
-        return "msg_block(block=%s)" % (repr(self.block))
+        return f"msg_block(block={repr(self.block)})"
 
 
 class msg_getaddr(MsgSerializable):
@@ -444,11 +443,7 @@ msg_classes = [msg_version, msg_verack, msg_addr, msg_alert, msg_inv,
                msg_headers, msg_tx, msg_block, msg_getaddr, msg_ping,
                msg_pong, msg_mempool]
 
-messagemap = {}
-for cls in msg_classes:
-    messagemap[cls.command] = cls
-
-
+messagemap = {cls.command: cls for cls in msg_classes}
 __all__ = (
         'MSG_TX',
         'MSG_BLOCK',

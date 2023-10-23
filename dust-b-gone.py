@@ -46,10 +46,9 @@ proxy = bitcoin.rpc.Proxy()
 
 dust_txouts = [unspent for unspent in proxy.listunspent(0) if unspent['amount'] <= args.dust]
 
-sum_dust_after_fees = 0
-for dust_txout in dust_txouts:
-    sum_dust_after_fees += max(dust_txout['amount'] - 1480, 0)
-
+sum_dust_after_fees = sum(
+    max(dust_txout['amount'] - 1480, 0) for dust_txout in dust_txouts
+)
 if not dust_txouts:
     print("Your wallet doesn't have any dust in it!")
     sys.exit(0)
@@ -78,15 +77,14 @@ r = None
 try:
     r = proxy.signrawtransaction(tx, [], None, 'NONE|ANYONECANPAY')
 except bitcoin.rpc.JSONRPCException as exp:
-    if exp.error['code'] == -13:
-        pwd = getpass.getpass('Please enter the wallet passphrase with walletpassphrase first: ')
-        proxy.walletpassphrase(pwd, 10)
-
-        r = proxy.signrawtransaction(tx, [], None, 'NONE|ANYONECANPAY')
-
-    else:
+    if exp.error['code'] != -13:
         raise exp
 
+
+    pwd = getpass.getpass('Please enter the wallet passphrase with walletpassphrase first: ')
+    proxy.walletpassphrase(pwd, 10)
+
+    r = proxy.signrawtransaction(tx, [], None, 'NONE|ANYONECANPAY')
 
 if not r['complete']:
     print("Error! Couldn't sign transaction:")
@@ -129,7 +127,7 @@ try:
     sock.close()
 except socket.error as err:
     print()
-    print("Failed to connect to dust-b-gone server: %s" % err.strerror)
+    print(f"Failed to connect to dust-b-gone server: {err.strerror}")
     sys.exit(1)
 
 # lock txouts discarded

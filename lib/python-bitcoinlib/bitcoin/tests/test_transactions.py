@@ -21,7 +21,7 @@ from bitcoin.core.scripteval import VerifyScript, SCRIPT_VERIFY_P2SH
 from bitcoin.tests.test_scripteval import parse_script
 
 def load_test_vectors(name):
-    with open(os.path.dirname(__file__) + '/data/' + name, 'r') as fd:
+    with open(f'{os.path.dirname(__file__)}/data/{name}', 'r') as fd:
         for test_case in json.load(fd):
             # Comments designated by single length strings
             if len(test_case) == 1:

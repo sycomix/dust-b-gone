@@ -80,7 +80,7 @@ class CInv(Serializable):
         f.write(self.hash)
 
     def __repr__(self):
-        return "CInv(type=%s hash=%s)" % (self.typemap[self.type], hexlify(self.hash))
+        return f"CInv(type={self.typemap[self.type]} hash={hexlify(self.hash)})"
 
 
 class CBlockLocator(Serializable):

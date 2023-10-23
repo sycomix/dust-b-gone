@@ -51,11 +51,7 @@ def encode(b):
         res.append(B58_DIGITS[r])
     res = ''.join(res[::-1])
 
-    # Encode leading zeros as base58 zeros
-    czero = b'\x00'
-    if sys.version > '3':
-        # In Python3 indexing a bytes returns numbers, not characters.
-        czero = 0
+    czero = 0 if sys.version > '3' else b'\x00'
     pad = 0
     for c in b:
         if c == czero:
@@ -81,7 +77,7 @@ def decode(s):
     # Convert the integer to bytes
     h = '%x' % n
     if len(h) % 2:
-        h = '0' + h
+        h = f'0{h}'
     res = binascii.unhexlify(h.encode('utf8'))
 
     # Add padding back.
@@ -103,7 +99,7 @@ class CBase58Data(bytes):
     """
     def __new__(cls, s):
         k = decode(s)
-        verbyte, data, check0 = k[0:1], k[1:-4], k[-4:]
+        verbyte, data, check0 = k[:1], k[1:-4], k[-4:]
         check1 = bitcoin.core.Hash(verbyte + data)[:4]
         if check0 != check1:
             raise Base58ChecksumError('Checksum mismatch: expected %r, calculated %r' % (check0, check1))
@@ -139,7 +135,7 @@ class CBase58Data(bytes):
     def __str__(self):
         """Convert to string"""
         vs = _bchr(self.nVersion) + self
-        check = bitcoin.core.Hash(vs)[0:4]
+        check = bitcoin.core.Hash(vs)[:4]
         return encode(vs + check)
 
     def __repr__(self):

@@ -62,36 +62,27 @@ class CScriptOp(int):
         if not (0 <= n <= 16):
             raise ValueError('Integer must be in range 0 <= n <= 16, got %d' % n)
 
-        if n == 0:
-            return OP_0
-        else:
-            return CScriptOp(OP_1 + n-1)
+        return OP_0 if n == 0 else CScriptOp(OP_1 + n-1)
 
     def decode_op_n(self):
         """Decode a small integer opcode, returning an integer"""
         if self == OP_0:
             return 0
 
-        if not (self == OP_0 or OP_1 <= self <= OP_16):
+        if not OP_1 <= self <= OP_16:
             raise ValueError('op %r is not an OP_N' % self)
 
         return int(self - OP_1+1)
 
     def is_small_int(self):
         """Return true if the op pushes a small integer to the stack"""
-        if 0x51 <= self <= 0x60 or self == 0:
-            return True
-        else:
-            return False
+        return 0x51 <= self <= 0x60 or self == 0
 
     def __str__(self):
         return repr(self)
 
     def __repr__(self):
-        if self in OPCODE_NAMES:
-            return OPCODE_NAMES[self]
-        else:
-            return 'CScriptOp(0x%x)' % self
+        return OPCODE_NAMES[self] if self in OPCODE_NAMES else 'CScriptOp(0x%x)' % self
 
     def __new__(cls, n):
         try:
@@ -542,15 +533,15 @@ class CScript(bytes):
         raise NotImplementedError
 
     def __new__(cls, value=b''):
-        if isinstance(value, bytes) or isinstance(value, bytearray):
+        if isinstance(value, (bytes, bytearray)):
             return super(CScript, cls).__new__(cls, value)
-        else:
-            def coerce_iterable(iterable):
-                for instance in iterable:
-                    yield cls.__coerce_instance(instance)
-            # Annoyingly on both python2 and python3 bytes.join() always
-            # returns a bytes instance even when subclassed.
-            return super(CScript, cls).__new__(cls, b''.join(coerce_iterable(value)))
+        def coerce_iterable(iterable):
+            for instance in iterable:
+                yield cls.__coerce_instance(instance)
+
+        # Annoyingly on both python2 and python3 bytes.join() always
+        # returns a bytes instance even when subclassed.
+        return super(CScript, cls).__new__(cls, b''.join(coerce_iterable(value)))
 
     def raw_iter(self):
         """Raw iteration
@@ -603,7 +594,7 @@ class CScript(bytes):
 
                 # Check for truncation
                 if len(data) < datasize:
-                    raise CScriptTruncatedPushDataError('%s: truncated data' % pushdata_type, data)
+                    raise CScriptTruncatedPushDataError(f'{pushdata_type}: truncated data', data)
 
                 i += datasize
 
@@ -633,10 +624,7 @@ class CScript(bytes):
         # For Python3 compatibility add b before strings so testcases don't
         # need to change
         def _repr(o):
-            if isinstance(o, bytes):
-                return "x('%s')" % bitcoin.core.b2x(o)
-            else:
-                return repr(o)
+            return f"x('{bitcoin.core.b2x(o)}')" if isinstance(o, bytes) else repr(o)
 
         ops = []
         i = iter(self)
@@ -645,10 +633,10 @@ class CScript(bytes):
             try:
                 op = _repr(next(i))
             except CScriptTruncatedPushDataError as err:
-                op = '%s...<ERROR: %s>' % (_repr(err.data), err)
+                op = f'{_repr(err.data)}...<ERROR: {err}>'
                 break
             except CScriptInvalidError as err:
-                op = '<ERROR: %s>' % err
+                op = f'<ERROR: {err}>'
                 break
             except StopIteration:
                 break
@@ -656,7 +644,7 @@ class CScript(bytes):
                 if op is not None:
                     ops.append(op)
 
-        return "CScript([%s])" % ', '.join(ops)
+        return f"CScript([{', '.join(ops)}])"
 
     def is_p2sh(self):
         """Test if the script is a p2sh scriptPubKey
@@ -762,10 +750,11 @@ class CScript(bytes):
             if opcode in (OP_CHECKSIG, OP_CHECKSIGVERIFY):
                 n += 1
             elif opcode in (OP_CHECKMULTISIG, OP_CHECKMULTISIGVERIFY):
-                if fAccurate and (OP_1 <= lastOpcode <= OP_16):
-                    n += opcode.decode_op_n()
-                else:
-                    n += 20
+                n += (
+                    opcode.decode_op_n()
+                    if fAccurate and (OP_1 <= lastOpcode <= OP_16)
+                    else 20
+                )
             lastOpcode = opcode
         return n
 
@@ -789,10 +778,7 @@ def FindAndDelete(script, sig):
         if not skip:
             r += script[last_sop_idx:sop_idx]
         last_sop_idx = sop_idx
-        if script[sop_idx:sop_idx + len(sig)] == sig:
-            skip = True
-        else:
-            skip = False
+        skip = script[sop_idx:sop_idx + len(sig)] == sig
     if not skip:
         r += script[last_sop_idx:]
     return CScript(r)
@@ -831,8 +817,7 @@ def RawSignatureHash(script, txTo, inIdx, hashtype):
 
         tmp = txtmp.vout[outIdx]
         txtmp.vout = []
-        for i in range(outIdx):
-            txtmp.vout.append(bitcoin.core.CTxOut())
+        txtmp.vout.extend(bitcoin.core.CTxOut() for _ in range(outIdx))
         txtmp.vout.append(tmp)
 
         for i in range(len(txtmp.vin)):
@@ -841,9 +826,7 @@ def RawSignatureHash(script, txTo, inIdx, hashtype):
 
     if hashtype & SIGHASH_ANYONECANPAY:
         tmp = txtmp.vin[inIdx]
-        txtmp.vin = []
-        txtmp.vin.append(tmp)
-
+        txtmp.vin = [tmp]
     s = txtmp.serialize()
     s += struct.pack(b"<I", hashtype)
 

@@ -79,7 +79,7 @@ def b2lx(b):
     """
     return binascii.hexlify(b[::-1]).decode('utf8')
 
-if not (sys.version > '3'):
+if sys.version <= '3':
     x = _py2_x
     b2x = _py2_b2x
     lx = _py2_lx
@@ -123,7 +123,7 @@ class COutPoint(ImmutableSerializable):
     __slots__ = ['hash', 'n']
 
     def __init__(self, hash=b'\x00'*32, n=0xffffffff):
-        if not len(hash) == 32:
+        if len(hash) != 32:
             raise ValueError('COutPoint: hash must be exactly 32 bytes; got %d bytes' % len(hash))
         object.__setattr__(self, 'hash', hash)
         if not (0 <= n <= 0xffffffff):
@@ -265,11 +265,7 @@ class CTxOut(ImmutableSerializable):
         BytesSerializer.stream_serialize(self.scriptPubKey, f)
 
     def is_valid(self):
-        if not MoneyRange(self.nValue):
-            return False
-        if not self.scriptPubKey.is_valid():
-            return False
-        return True
+        return bool(self.scriptPubKey.is_valid()) if MoneyRange(self.nValue) else False
 
     def __repr__(self):
         if self.nValue >= 0:
@@ -674,9 +670,7 @@ class CheckBlockError(CheckBlockHeaderError):
     pass
 
 def GetLegacySigOpCount(tx):
-    nSigOps = 0
-    for txin in tx.vin:
-        nSigOps += txin.scriptSig.GetSigOpCount(False)
+    nSigOps = sum(txin.scriptSig.GetSigOpCount(False) for txin in tx.vin)
     for txout in tx.vout:
         nSigOps += txout.scriptPubKey.GetSigOpCount(False)
     return nSigOps

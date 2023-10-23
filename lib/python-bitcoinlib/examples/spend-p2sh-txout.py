@@ -13,6 +13,7 @@
 
 """Low-level example of how to spend a P2SH/BIP16 txout"""
 
+
 import sys
 if sys.version_info.major < 3:
     sys.stderr.write('Sorry, Python 3.x required by this example.\n')
@@ -46,7 +47,7 @@ txin_scriptPubKey = txin_redeemScript.to_p2sh_scriptPubKey()
 # Convert the P2SH scriptPubKey to a base58 Bitcoin address and print it.
 # You'll need to send some funds to it to create a txout to spend.
 txin_p2sh_address = CBitcoinAddress.from_scriptPubKey(txin_scriptPubKey)
-print('Pay to:',str(txin_p2sh_address))
+print('Pay to:', txin_p2sh_address)
 
 # Same as the txid:vout the createrawtransaction RPC call requires
 #
